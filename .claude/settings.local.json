@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"C:/Users/YashWaikar/Desktop/aiforms-rebuild/sbe-ampcus\")",
+      "Bash(mkdir -p \"C:/Users/YashWaikar/Desktop/aiforms-rebuild/sbe-ampcus/lib\")",
+      "Bash(mkdir -p \"C:/Users/YashWaikar/Desktop/aiforms-rebuild/sbe-ampcus/utils\")",
+      "Bash(mkdir -p \"C:/Users/YashWaikar/Desktop/aiforms-rebuild/sbe-ampcus/api/auth\")",
+      "Bash(mkdir -p \"C:/Users/YashWaikar/Desktop/aiforms-rebuild/sbe-ampcus/api/assessment-types\")",
+      "Read(//c/Users/YashWaikar/Desktop/aiforms-rebuild/sbe-ampcus/**)",
+      "Bash(npm init *)"
+    ]
+  }
+}

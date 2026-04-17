@@ -27,6 +27,11 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
+
+# backend build output and deps
+aiforms-api/node_modules/
+aiforms-api/dist/
 
 # vercel
 .vercel
