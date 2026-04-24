@@ -1,13 +1,20 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { assessmentTypesAPI, assessmentAPI } from '@/lib/api'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Search, ArrowLeft, ArrowRight, Save, Send, RotateCcw, AlertCircle } from 'lucide-react'
+import amazonLogo from '@/lib/amazon-logo-amazon-icon-transparent-free-png.webp'
+import salesforceLogo from '@/lib/salesforce-2-logo-png-transparent.png'
 import QuestionInput from '@/components/assessment/QuestionInput'
 import AssessmentPreview from '@/components/assessment/AssessmentPreview'
 import SuccessPage from '@/components/assessment/SuccessPage'
 import Dropdown from '@/components/common/Dropdown'
 import { SafeDescriptionHtml } from '@/components/common/RichTextEditor'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useBranding } from '@/contexts/BrandingContext'
 import BrandLogo from '@/components/common/BrandLogo'
 
@@ -88,10 +95,42 @@ export default function Assessment() {
         setSelectedAssessmentType(firstType)
         setFormData(prev => ({ ...prev, assessment_type_id: firstType.id }))
         await loadQuestions(firstType.id)
+      } else {
+        setLoading(false)
       }
     } catch (err: any) {
       setError('Failed to load assessment types. Please check your connection and try again.')
+      setLoading(false)
     }
+  }
+
+  const normalizeQuestion = (q: any): Question => ({
+    ...q,
+    questionCode: q.questionCode ?? q.question_code ?? q.code,
+    questionText: q.questionText ?? q.question_text ?? '',
+    questionType: q.questionType ?? q.question_type,
+    isRequired: q.isRequired ?? q.is_required ?? false,
+    helpText: q.helpText ?? q.help_text ?? '',
+    placeholder: q.placeholder ?? '',
+    parentId: q.parentId ?? q.parent_id ?? null,
+    options: q.options ?? {},
+    validationRules: q.validationRules ?? q.validation_rules ?? {},
+    children: [],
+  })
+
+  const nestQuestions = (flat: Question[]): Question[] => {
+    const byId = new Map<number, Question>()
+    const roots: Question[] = []
+    flat.forEach(q => { if (q.id != null) byId.set(q.id, { ...q, children: [] }) })
+    byId.forEach(q => {
+      const pid = (q as any).parentId ?? (q as any).parent_id ?? null
+      if (pid && byId.has(pid)) {
+        byId.get(pid)!.children!.push(q)
+      } else {
+        roots.push(q)
+      }
+    })
+    return roots
   }
 
   const loadQuestions = async (assessmentTypeId: number) => {
@@ -104,7 +143,13 @@ export default function Assessment() {
         setLoading(false)
         return
       }
-      const cats: Category[] = typeRes.assessmentType.categories || []
+      const rawCats: any[] = typeRes.assessmentType.categories || []
+      const cats: Category[] = rawCats.map(c => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+        questions: nestQuestions((c.questions || []).map(normalizeQuestion)),
+      }))
       setCategories(cats)
 
       const flattenedQuestions: Question[] = []
@@ -322,11 +367,36 @@ export default function Assessment() {
 
   if (loading) {
     return (
-      <div className="container">
-        <div className="loading" style={{ textAlign: 'center', padding: '50px' }}>
-          <div className="spinner"></div>
-          <p>Loading assessment questions...</p>
+      <div className="min-h-screen w-full bg-slate-50">
+        <div className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-lg">
+          <div className="flex h-11 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-7 w-24 rounded-full" />
+          </div>
         </div>
+        <main className="w-full px-4 py-6 sm:px-6 lg:px-10">
+          <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
+            <CardHeader className="space-y-3 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/50 p-6 sm:p-8">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-8 w-2/3 max-w-md" />
+              <Skeleton className="h-4 w-full max-w-xl" />
+              <Skeleton className="h-2 w-full rounded-full" />
+            </CardHeader>
+            <CardContent className="space-y-8 p-6 sm:p-8">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-11 w-full" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              ))}
+              <div className="flex items-center justify-between pt-4">
+                <Skeleton className="h-10 w-28" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     )
   }
@@ -408,6 +478,29 @@ export default function Assessment() {
     </div>
   ) : null
 
+  const SiteHeader = () => (
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-lg">
+      <div className="flex h-11 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="group flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 shadow-sm transition-all group-hover:shadow-md group-hover:border-slate-300">
+            <Image src={amazonLogo} alt="Amazon" className="h-4 w-auto object-contain" priority />
+            <span className="h-4 w-px bg-slate-300" />
+            <Image src={salesforceLogo} alt="Salesforce" className="h-4 w-auto object-contain" priority />
+          </div>
+          <span className="hidden text-sm font-semibold tracking-tight text-slate-900 sm:inline">
+            {branding?.appName || 'SBEAMP'}
+          </span>
+        </Link>
+        <Button asChild variant="outline" size="sm" className="h-7 gap-1.5 rounded-full border-slate-200 bg-white px-3 text-xs text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900">
+          <Link href="/check-results">
+            <Search className="h-3.5 w-3.5" />
+            Check Submission
+          </Link>
+        </Button>
+      </div>
+    </header>
+  )
+
   if (isSingleQuestionMode && allQuestionsList.length > 0) {
     const currentQuestion = allQuestionsList[currentQuestionIndex]
     const answerKey = currentQuestion.answerKey!
@@ -432,34 +525,42 @@ export default function Assessment() {
         })
       : (currentQuestion.children || [])
 
+    const progress = ((currentQuestionIndex + 1) / allQuestionsList.length) * 100
     return (
-      <div className="app-shell">
-        <div className="app-nav">
-          <div className="app-brand">
-            <BrandLogo logoUrl={branding?.logoUrl} appName={branding?.appName} width={branding?.logoWidth ?? 56} height={branding?.logoHeight ?? 56} rounded={12} background="rgba(0,0,0,0.04)" foreground="#111827" />
-            <div className="app-brand__name">{branding?.appName || 'SBEAMP'}</div>
-          </div>
-          <div className="app-actions">
-            <Link href="/check-results" className="app-btn">🔍 Check Submission</Link>
-          </div>
-        </div>
-        <div className="app-main">
-          <div className="app-card">
-            <div className="app-card__header">
-              <div className="app-card__title">📝 {selectedAssessmentType?.name || 'Assessment'}</div>
-              {selectedAssessmentType?.description && <SafeDescriptionHtml html={selectedAssessmentType.description} className="app-card__subtitle" />}
+      <div className="min-h-screen w-full bg-slate-50">
+        <SiteHeader />
+        <main className="w-full px-4 py-6 sm:px-6 lg:px-10">
+          <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
+            <CardHeader className="space-y-3 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/50 p-6 sm:p-8">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                Assessment
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                {selectedAssessmentType?.name || 'Assessment'}
+              </h1>
+              {selectedAssessmentType?.description && (
+                <SafeDescriptionHtml html={selectedAssessmentType.description} className="text-sm leading-relaxed text-slate-600" />
+              )}
               {typeDropdown}
-            </div>
-            <div className="app-card__body">
-              <form>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <span style={{ color: '#667eea', fontWeight: '600' }}>
+            </CardHeader>
+            <CardContent className="p-6 sm:p-8">
+              <div className="mb-6 space-y-2">
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span className="text-primary">
                     Question {currentQuestionIndex + 1} of {allQuestionsList.length}
                   </span>
                   {currentQuestion.categoryName && (
-                    <span style={{ color: '#888', fontSize: '0.9em' }}>{currentQuestion.categoryName}</span>
+                    <span className="text-slate-500">{currentQuestion.categoryName}</span>
                   )}
                 </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#667eea] to-[#764ba2] transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+              <form>
                 <section>
                   <label className="question-label">
                     {currentQuestion.questionNumber}. <SafeDescriptionHtml as="span" html={currentQuestion.questionText || ''} />
@@ -474,49 +575,64 @@ export default function Assessment() {
                   />
                 </section>
                 {showChildren && childrenToRender.length > 0 && (
-                  <div style={{ marginTop: '20px' }}>{renderChildQuestions(childrenToRender, 0)}</div>
+                  <div className="mt-5">{renderChildQuestions(childrenToRender, 0)}</div>
                 )}
-                <div className="form-actions" style={{ marginTop: '30px', justifyContent: 'space-between' }}>
-                  <button type="button" onClick={handlePrevious} className="reset-btn" disabled={currentQuestionIndex === 0} style={{ opacity: currentQuestionIndex === 0 ? 0.5 : 1 }}>← Previous</button>
-                  <button type="button" onClick={handleSaveAndNext} className="submit-btn" disabled={!!(currentQuestion.isRequired && !currentAnswer)}>
-                    {isLastQuestion ? 'Continue to review →' : '💾 Save & Next →'}
-                  </button>
+                <div className="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 pt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePrevious}
+                    disabled={currentQuestionIndex === 0}
+                    className="gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Previous
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSaveAndNext}
+                    disabled={!!(currentQuestion.isRequired && !currentAnswer)}
+                    className="gap-2 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white shadow-md hover:from-[#5c72d8] hover:to-[#6a4391]"
+                  >
+                    {isLastQuestion ? (
+                      <>Continue to review <ArrowRight className="h-4 w-4" /></>
+                    ) : (
+                      <><Save className="h-4 w-4" /> Save & Next</>
+                    )}
+                  </Button>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     )
   }
 
   let questionNumber = 1
   return (
-    <div className="app-shell">
-      <div className="app-nav">
-        <div className="app-brand">
-          <BrandLogo logoUrl={branding?.logoUrl} appName={branding?.appName} width={branding?.logoWidth ?? 56} height={branding?.logoHeight ?? 56} rounded={12} background="rgba(0,0,0,0.04)" foreground="#111827" />
-          <div className="app-brand__name">{branding?.appName || 'SBEAMP'}</div>
-        </div>
-        <div className="app-actions">
-          <Link href="/check-results" className="app-btn">🔍 Check Submission</Link>
-        </div>
-      </div>
-      <div className="app-main">
-        <div className="app-card">
-          <div className="app-card__header">
-            <div className="app-card__title">{selectedAssessmentType?.name || 'AI Adoption Readiness Assessment'}</div>
+    <div className="min-h-screen w-full bg-slate-50">
+      <SiteHeader />
+      <main className="w-full px-4 py-6 sm:px-6 lg:px-10">
+        <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
+          <CardHeader className="space-y-3 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/50 p-6 sm:p-8">
+            <div className="text-xs font-semibold uppercase tracking-wider text-primary">Assessment</div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              {selectedAssessmentType?.name || 'AI Adoption Readiness Assessment'}
+            </h1>
             {selectedAssessmentType?.description ? (
-              <SafeDescriptionHtml html={selectedAssessmentType.description} className="app-card__subtitle" />
+              <SafeDescriptionHtml html={selectedAssessmentType.description} className="text-sm leading-relaxed text-slate-600" />
             ) : (
-              <div className="app-card__subtitle">Please complete all sections to help us understand your organization&apos;s readiness for AI transformation</div>
+              <p className="text-sm leading-relaxed text-slate-600">
+                Please complete all sections to help us understand your organization&apos;s readiness for AI transformation
+              </p>
             )}
             {typeDropdown}
-          </div>
-          <div className="app-card__body">
+          </CardHeader>
+          <CardContent className="p-0">
             {error && (
-              <div className="error-message" style={{ margin: '20px', padding: '15px', background: '#fee', border: '1px solid #fcc', borderRadius: '5px' }}>
-                ⚠️ {error}
+              <div className="mx-6 mt-6 flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{error}</span>
               </div>
             )}
             <form id="assessmentForm" onSubmit={handleSubmit}>
@@ -562,16 +678,32 @@ export default function Assessment() {
                   </section>
                 )
               })}
-              <div className="form-actions">
-                <button type="submit" className="submit-btn" disabled={submitting || loading}>
-                  {submitting ? 'Submitting...' : 'Submit Assessment'}
-                </button>
-                <button type="button" className="reset-btn" onClick={handleReset} disabled={submitting || loading}>Reset Form</button>
+              <div className="flex flex-col items-center justify-center gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-6 sm:flex-row">
+                <Button
+                  type="submit"
+                  disabled={submitting || loading}
+                  className="w-full gap-2 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white shadow-md hover:from-[#5c72d8] hover:to-[#6a4391] sm:w-auto"
+                  size="lg"
+                >
+                  <Send className="h-4 w-4" />
+                  {submitting ? 'Submitting…' : 'Submit Assessment'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleReset}
+                  disabled={submitting || loading}
+                  className="w-full gap-2 sm:w-auto"
+                  size="lg"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Reset Form
+                </Button>
               </div>
             </form>
-          </div>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      </main>
     </div>
   )
 }

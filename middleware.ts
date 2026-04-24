@@ -1,18 +1,10 @@
-import { jwtVerify } from 'jose'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export async function middleware(req: NextRequest) {
-  if (req.nextUrl.pathname.startsWith('/admin')) {
-    const token = req.cookies.get('token')?.value
-    if (!token) return NextResponse.redirect(new URL('/login', req.url))
-    try {
-      await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET))
-      return NextResponse.next()
-    } catch {
-      return NextResponse.redirect(new URL('/login', req.url))
-    }
-  }
+// Auth is enforced client-side in app/admin/layout.tsx via AuthContext.
+// The token cookie lives on the Railway API domain so cannot be read here.
+export function middleware(_req: NextRequest) {
+  return NextResponse.next();
 }
 
-export const config = { matcher: ['/admin/:path*'] }
+export const config = { matcher: [] };

@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
     margin: 0;
     padding: 0;
@@ -7,13 +11,40 @@
 :root {
     --brand-primary: #667eea;
     --brand-secondary: #764ba2;
+
+    /* shadcn/ui CSS variables */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 246 80% 70%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 246 80% 70%;
+    --radius: 0.5rem;
+}
+
+html, body {
+    background: #f8fafc;
+    color: #0f172a;
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
-    min-height: 100vh;
-    padding: 20px;
     line-height: 1.6;
 }
 
@@ -166,7 +197,7 @@ body {
 }
 
 @media (max-width: 720px) {
-    body { padding: 14px; }
+    body { padding: 0; }
     .app-nav { flex-wrap: wrap; }
     .app-actions { width: 100%; justify-content: flex-end; }
     .app-btn { width: 100%; justify-content: center; }
@@ -247,14 +278,14 @@ body {
     overflow: hidden;
 }
 
-header {
+.container header {
     background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
     color: white;
     padding: 40px 30px;
     text-align: center;
 }
 
-header h1 {
+.container header h1 {
     font-size: 2.5em;
     margin-bottom: 10px;
     font-weight: 700;
@@ -307,8 +338,8 @@ header h1 {
 }
 
 /* Description text in header: left-aligned, with space below the title */
-header .subtitle,
-header .description-html {
+.container header .subtitle,
+.container header .description-html {
     text-align: left;
     display: block;
     max-width: 100%;
@@ -593,7 +624,7 @@ input[type="email"]:focus {
 }
 
 @media (max-width: 768px) {
-    header h1 {
+    .container header h1 {
         font-size: 2em;
     }
 

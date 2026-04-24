@@ -2,15 +2,27 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { assessmentAPI } from '@/lib/api'
 import { useBranding } from '@/contexts/BrandingContext'
-
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Search, Home, KeyRound, Mail, AlertCircle, Loader2,
+  FileText, BarChart3, ArrowRight, Lightbulb,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import amazonLogo from '@/lib/amazon-logo-amazon-icon-transparent-free-png.webp'
+import salesforceLogo from '@/lib/salesforce-2-logo-png-transparent.png'
 
 function formatDate(dateString?: string) {
   if (!dateString) return 'N/A'
   try {
-    return new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    })
   } catch { return dateString }
 }
 
@@ -49,87 +61,180 @@ export default function CheckResultsPage() {
     }
   }
 
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '14px', fontSize: '1em', borderRadius: '10px', border: '2px solid #e0e0e0', transition: 'all 0.3s ease', boxSizing: 'border-box' }
-
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)', padding: '20px' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto', background: 'white', borderRadius: '20px', padding: '40px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #e0e0e0' }}>
-          <div>
-            <h1 style={{ fontSize: '2.5em', margin: '0 0 10px 0', color: '#333', background: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              🔍 Check Assessment Results
-            </h1>
-            <p style={{ color: '#666', margin: '0' }}>View your submitted assessment results</p>
-          </div>
-          <Link href="/" style={{ padding: '12px 24px', fontSize: '1em', fontWeight: '600', color: 'var(--brand-primary)', background: 'white', border: '2px solid var(--brand-primary)', borderRadius: '10px', textDecoration: 'none' }}>
-            🏠 Home
+    <div className="min-h-screen w-full bg-slate-50">
+      {/* Header — matches Assessment page */}
+      <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-lg">
+        <div className="flex h-11 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="group flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 shadow-sm transition-all group-hover:shadow-md group-hover:border-slate-300">
+              <Image src={amazonLogo} alt="Amazon" className="h-4 w-auto object-contain" priority />
+              <span className="h-4 w-px bg-slate-300" />
+              <Image src={salesforceLogo} alt="Salesforce" className="h-4 w-auto object-contain" priority />
+            </div>
+            <span className="hidden text-sm font-semibold tracking-tight text-slate-900 sm:inline">
+              {branding?.appName || 'SBEAMP'}
+            </span>
           </Link>
+          <Button asChild variant="outline" size="sm" className="h-7 gap-1.5 rounded-full border-slate-200 bg-white px-3 text-xs text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900">
+            <Link href="/">
+              <Home className="h-3.5 w-3.5" />
+              Home
+            </Link>
+          </Button>
         </div>
+      </header>
 
-        <form onSubmit={handleSearch} style={{ marginBottom: '30px' }}>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', padding: '15px', background: '#f8f9ff', borderRadius: '10px' }}>
-            {(['id', 'email'] as const).map(type => (
-              <label key={type} style={{ flex: 1, padding: '12px', background: searchType === type ? 'var(--brand-primary)' : 'white', color: searchType === type ? 'white' : 'var(--brand-primary)', borderRadius: '8px', textAlign: 'center', cursor: 'pointer', fontWeight: '600', border: '2px solid var(--brand-primary)' }}>
-                <input type="radio" name="searchType" value={type} checked={searchType === type} onChange={() => setSearchType(type)} style={{ display: 'none' }} />
-                {type === 'id' ? '🔑 By Assessment ID' : '📧 By Email & Name'}
-              </label>
-            ))}
-          </div>
-
-          {searchType === 'id' && (
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '10px', fontWeight: '600', color: '#333' }}>Assessment ID *</label>
-              <input type="text" value={assessmentId} onChange={e => setAssessmentId(e.target.value)} placeholder="Enter your Assessment ID (e.g., 123)" required style={inputStyle} />
-              <small style={{ display: 'block', marginTop: '8px', color: '#666', fontSize: '0.9em' }}>💡 You received this ID when you submitted your assessment</small>
+      <main className="w-full px-4 py-6 sm:px-6 lg:px-10">
+        <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
+          <CardHeader className="space-y-3 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/50 p-6 sm:p-8">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+              <Search className="h-3.5 w-3.5" /> Lookup
             </div>
-          )}
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              Check Assessment Results
+            </h1>
+            <p className="text-sm leading-relaxed text-slate-600">
+              View your submitted assessment results by ID, or search by email and name.
+            </p>
+          </CardHeader>
 
-          {searchType === 'email' && (
-            <div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '10px', fontWeight: '600', color: '#333' }}>Email Address *</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Enter your email address" required style={inputStyle} />
-              </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '10px', fontWeight: '600', color: '#333' }}>Full Name (Optional)</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Enter your full name (optional)" style={inputStyle} />
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div style={{ padding: '15px', background: '#fee', border: '1px solid #fcc', borderRadius: '10px', color: '#c33', marginBottom: '20px' }}>⚠️ {error}</div>
-          )}
-
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '16px', fontSize: '1.1em', fontWeight: '600', color: 'white', background: loading ? '#ccc' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer' }}>
-            {loading ? '🔍 Searching...' : '🔍 Search Results'}
-          </button>
-        </form>
-
-        {results.length > 0 && (
-          <div>
-            <h2 style={{ fontSize: '1.8em', marginBottom: '20px', color: '#333' }}>
-              Found {results.length} Assessment{results.length > 1 ? 's' : ''}
-            </h2>
-            {results.map(assessment => (
-              <div key={assessment.id} style={{ padding: '25px', background: '#f8f9ff', borderRadius: '15px', border: '2px solid #e0e7ff', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h3 style={{ margin: '0 0 5px 0', color: '#333', fontSize: '1.3em' }}>Assessment #{assessment.id}</h3>
-                    <p style={{ margin: '0', color: '#666', fontSize: '0.9em' }}>Submitted: {formatDate(assessment.submitted_at || assessment.created_at)}</p>
-                  </div>
+          <CardContent className="p-6 sm:p-8">
+            <form onSubmit={handleSearch} className="space-y-6">
+              {/* Tabs */}
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-1.5">
+                {([
+                  { value: 'id', label: 'By Assessment ID', icon: KeyRound },
+                  { value: 'email', label: 'By Email & Name', icon: Mail },
+                ] as const).map(({ value, label, icon: Icon }) => (
                   <button
-                    onClick={() => router.push(`/assessment/results/${assessment.id}`)}
-                    style={{ padding: '12px 24px', fontSize: '1em', fontWeight: '600', color: 'white', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none', borderRadius: '10px', cursor: 'pointer' }}
+                    key={value}
+                    type="button"
+                    onClick={() => setSearchType(value)}
+                    className={cn(
+                      'flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all',
+                      searchType === value
+                        ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200'
+                        : 'text-slate-500 hover:text-slate-700',
+                    )}
                   >
-                    📊 View Details
+                    <Icon className="h-4 w-4" />
+                    {label}
                   </button>
+                ))}
+              </div>
+
+              {/* Fields */}
+              {searchType === 'id' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="aid">Assessment ID <span className="text-rose-500">*</span></Label>
+                  <Input
+                    id="aid"
+                    value={assessmentId}
+                    onChange={e => setAssessmentId(e.target.value)}
+                    placeholder="e.g., 123"
+                    required
+                    className="h-11"
+                  />
+                  <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
+                    You received this ID when you submitted your assessment
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address <span className="text-rose-500">*</span></Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name <span className="text-xs font-normal text-slate-400">(optional)</span></Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={loading}
+                size="lg"
+                className="w-full gap-2 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white shadow-md hover:from-[#5c72d8] hover:to-[#6a4391]"
+              >
+                {loading ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Searching…</>
+                ) : (
+                  <><Search className="h-4 w-4" /> Search Results</>
+                )}
+              </Button>
+            </form>
+
+            {results.length > 0 && (
+              <div className="mt-10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Found {results.length} Assessment{results.length > 1 ? 's' : ''}
+                  </h2>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                    {results.length} result{results.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="grid gap-3">
+                  {results.map(assessment => (
+                    <div
+                      key={assessment.id}
+                      className="group flex flex-col items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-primary/30 hover:shadow-sm sm:flex-row sm:items-center"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#667eea]/10 to-[#764ba2]/10">
+                          <FileText className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-semibold text-slate-900">
+                            Assessment #{assessment.id}
+                          </h3>
+                          <p className="text-xs text-slate-500">
+                            Submitted {formatDate(assessment.submitted_at || assessment.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => router.push(`/assessment/results/${assessment.id}`)}
+                        className="gap-2 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white shadow-sm hover:from-[#5c72d8] hover:to-[#6a4391]"
+                      >
+                        <BarChart3 className="h-3.5 w-3.5" />
+                        View Details
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
     </div>
   )
 }
