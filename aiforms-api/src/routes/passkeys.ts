@@ -56,7 +56,7 @@ async function setChallengeCookie(res: any, payload: ChallengePayload) {
     .setIssuedAt()
     .setExpirationTime('5m')
     .sign(challengeSecret())
-  res.setHeader(
+  res.append(
     'Set-Cookie',
     `pk_chal=${token}; HttpOnly; Path=/; Max-Age=300; SameSite=None; Secure`
   )
@@ -75,7 +75,7 @@ async function readChallengeCookie(req: any, type: 'reg' | 'auth'): Promise<Chal
 }
 
 function clearChallengeCookie(res: any) {
-  res.setHeader(
+  res.append(
     'Set-Cookie',
     `pk_chal=; HttpOnly; Path=/; Max-Age=0; SameSite=None; Secure`
   )
