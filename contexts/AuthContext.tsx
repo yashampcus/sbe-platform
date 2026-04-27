@@ -14,6 +14,7 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>
+  loginWithPasskey: () => Promise<{ success: boolean; user?: User; error?: string }>
   logout: () => Promise<void>
 }
 
@@ -59,13 +60,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const loginWithPasskey = async () => {
+    try {
+      const { startAuthentication } = await import('@simplewebauthn/browser')
+      const optsRes = await fetch(`${API}/auth/passkey/login/options`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const optsData = await optsRes.json()
+      if (!optsData.success) return { success: false, error: optsData.error || 'Failed to start' }
+
+      const assertion = await startAuthentication({ optionsJSON: optsData.options })
+
+      const verifyRes = await fetch(`${API}/auth/passkey/login/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ response: assertion }),
+      })
+      const data = await verifyRes.json()
+      if (!data.success) return { success: false, error: data.error || 'Login failed' }
+      if (data.user.role !== 'admin' && data.user.role !== 'admin-viewer') {
+        return { success: false, error: 'Access denied. Admin login only.' }
+      }
+      setUser(data.user)
+      return { success: true, user: data.user }
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Passkey sign-in cancelled' }
+    }
+  }
+
   const logout = async () => {
     await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {})
     setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithPasskey, logout }}>
       {children}
     </AuthContext.Provider>
   )

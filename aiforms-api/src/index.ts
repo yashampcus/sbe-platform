@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 
 import authRouter from './routes/auth'
+import passkeysRouter from './routes/passkeys'
 import configRouter from './routes/config'
 import assessmentTypesRouter from './routes/assessmentTypes'
 import questionsRouter from './routes/questions'
@@ -29,6 +30,7 @@ app.get('/health', (_req, res) => {
 })
 
 app.use('/api/auth', authRouter)
+app.use('/api/auth/passkey', passkeysRouter)
 app.use('/api/config', configRouter)
 app.use('/api/assessment-types', assessmentTypesRouter)
 app.use('/api/questions', questionsRouter)
@@ -37,6 +39,7 @@ app.use('/api/admin', adminRouter)
 
 // Back-compat routes (no /api prefix) — frontend currently calls these.
 app.use('/auth', authRouter)
+app.use('/auth/passkey', passkeysRouter)
 app.use('/config', configRouter)
 app.use('/assessment-types', assessmentTypesRouter)
 app.use('/questions', questionsRouter)

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Settings, Loader2, Check } from 'lucide-react'
+import { Settings, Loader2, Check, Fingerprint, Trash2 } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -158,6 +158,8 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        <PasskeysCard />
+
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -171,5 +173,120 @@ export default function SettingsPage() {
         </div>
       </form>
     </div>
+  )
+}
+
+interface Passkey {
+  id: number
+  device_name: string | null
+  created_at: string
+  last_used_at: string | null
+}
+
+function PasskeysCard() {
+  const [items, setItems] = useState<Passkey[]>([])
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [deviceName, setDeviceName] = useState('')
+
+  const load = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${API}/auth/passkey/list`, { credentials: 'include' })
+      const data = await res.json()
+      if (data.success) setItems(data.passkeys)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const enroll = async () => {
+    setError('')
+    setBusy(true)
+    try {
+      const { startRegistration } = await import('@simplewebauthn/browser')
+      const optsRes = await fetch(`${API}/auth/passkey/register/options`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const optsData = await optsRes.json()
+      if (!optsData.success) { setError(optsData.error || 'Failed'); return }
+
+      const attestation = await startRegistration({ optionsJSON: optsData.options })
+
+      const verifyRes = await fetch(`${API}/auth/passkey/register/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ response: attestation, deviceName: deviceName || null }),
+      })
+      const data = await verifyRes.json()
+      if (!data.success) { setError(data.error || 'Failed'); return }
+      setDeviceName('')
+      await load()
+    } catch (err: any) {
+      setError(err?.message || 'Cancelled')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const remove = async (id: number) => {
+    if (!confirm('Remove this passkey?')) return
+    await fetch(`${API}/auth/passkey/${id}`, { method: 'DELETE', credentials: 'include' })
+    await load()
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Fingerprint className="h-4 w-4" /> Passkeys
+        </CardTitle>
+        <CardDescription>Sign in with your device fingerprint, Face ID, or Windows Hello</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {error && <div className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">{error}</div>}
+
+        <div className="flex gap-2">
+          <Input
+            placeholder="Device name (e.g. Work laptop)"
+            value={deviceName}
+            onChange={e => setDeviceName(e.target.value)}
+            disabled={busy}
+          />
+          <Button type="button" onClick={enroll} disabled={busy} className="gap-2 shrink-0">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
+            Add passkey
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="text-sm text-slate-400">Loading…</div>
+        ) : items.length === 0 ? (
+          <div className="text-sm text-slate-500">No passkeys enrolled yet.</div>
+        ) : (
+          <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
+            {items.map(p => (
+              <li key={p.id} className="flex items-center justify-between px-3 py-2.5">
+                <div>
+                  <div className="text-sm font-medium text-slate-900">{p.device_name || 'Unnamed device'}</div>
+                  <div className="text-xs text-slate-500">
+                    Added {new Date(p.created_at).toLocaleDateString()}
+                    {p.last_used_at && <> · Last used {new Date(p.last_used_at).toLocaleDateString()}</>}
+                  </div>
+                </div>
+                <Button type="button" variant="ghost" size="sm" onClick={() => remove(p.id)} className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   )
 }

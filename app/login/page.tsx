@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { AlertCircle, Loader2, Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react'
+import { AlertCircle, Loader2, Eye, EyeOff, Mail, Lock, ArrowLeft, Fingerprint } from 'lucide-react'
 import amazonLogo from '@/lib/amazon-logo-amazon-icon-transparent-free-png.webp'
 import salesforceLogo from '@/lib/salesforce-2-logo-png-transparent.png'
 
@@ -18,7 +18,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { login, loginWithPasskey } = useAuth()
+  const [passkeyLoading, setPasskeyLoading] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,6 +34,18 @@ export default function LoginPage() {
       setError('An error occurred. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handlePasskey = async () => {
+    setError('')
+    setPasskeyLoading(true)
+    try {
+      const result = await loginWithPasskey()
+      if (result.success) router.push('/admin')
+      else setError(result.error || 'Passkey sign-in failed')
+    } finally {
+      setPasskeyLoading(false)
     }
   }
 
@@ -129,6 +142,26 @@ export default function LoginPage() {
                   <><Loader2 className="h-4 w-4 animate-spin" /> Signing in…</>
                 ) : (
                   'Sign in'
+                )}
+              </Button>
+
+              <div className="relative my-1">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-200" /></div>
+                <div className="relative flex justify-center text-xs"><span className="bg-white px-2 text-slate-400">or</span></div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                disabled={passkeyLoading || loading}
+                onClick={handlePasskey}
+                className="w-full gap-2"
+              >
+                {passkeyLoading ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Waiting for passkey…</>
+                ) : (
+                  <><Fingerprint className="h-4 w-4" /> Sign in with passkey</>
                 )}
               </Button>
             </form>
