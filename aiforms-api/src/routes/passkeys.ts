@@ -105,6 +105,7 @@ router.post('/register/options', requireAuth, async (_req, res) => {
     authenticatorSelection: {
       residentKey: 'required',
       userVerification: 'preferred',
+      authenticatorAttachment: 'platform',
     },
   })
 
