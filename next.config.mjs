@@ -1,4 +1,16 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const API_TARGET =
+  process.env.API_PROXY_TARGET || 'https://aiforms-api-production.up.railway.app'
 
-export default nextConfig;
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/api-proxy/:path*',
+        destination: `${API_TARGET}/:path*`,
+      },
+    ]
+  },
+}
+
+export default nextConfig
