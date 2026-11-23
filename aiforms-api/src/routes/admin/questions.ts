@@ -20,6 +20,7 @@ const QUESTION_TYPES = [
   'percentage_range',
   'file',
   'rich_text',
+  'group',
 ]
 
 function blockViewer(res: Response): boolean {
