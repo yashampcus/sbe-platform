@@ -1,3 +1,5 @@
+> **Note:** this is a stale planning note. The real API is in `aiforms-api/` — see the root README.md and TECHNICAL.md.
+
 # Backend Placeholder
 
 The backend API will be built separately (Vercel serverless, Neon DB, jose JWT).

@@ -232,8 +232,8 @@ Cross-origin cookies require `SameSite=None; Secure`, which browsers only accept
 
 ## 9. Deployment
 
-- **Backend** — Railway, config in [aiforms-api/railway.json](aiforms-api/railway.json). Build: `tsc` → `dist/`; start: `node dist/index.js`.
-- **Frontend** — Any Next.js host (Vercel-compatible). `next build` → `next start`.
+- **Backend** — Render (see [render.yaml](render.yaml); the old Railway config in [aiforms-api/railway.json](aiforms-api/railway.json) is unused). Build: `tsc` → `dist/`; start: `node dist/index.js`.
+- **Frontend** — Vercel; needs `NEXT_PUBLIC_API_URL=/api-proxy` and `API_PROXY_TARGET` (build-time, see README). `next build` → `next start`.
 - **Database** — Neon (serverless Postgres), connected via `@neondatabase/serverless` — no pool management needed.
 
 ---
